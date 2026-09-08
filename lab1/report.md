@@ -46,73 +46,47 @@
 ## 3. Схема сети
 
 
-```plantuml
-@startuml
-top to bottom direction
+```mermaid
+flowchart TB
+    internet([Интернет]) --> igw[Internet Gateway<br/>IGW]
 
-skinparam shadowing false
-skinparam componentStyle rectangle
-skinparam packageStyle rectangle
-skinparam defaultFontName Arial
-skinparam ArrowColor #64748B
-skinparam packageBorderColor #334155
-skinparam packageBackgroundColor #F8FAFC
-skinparam ranksep 35
-skinparam nodesep 20
+    subgraph vpc["VPC 10.254.0.0/16"]
+        subgraph az1["AZ-1"]
+            pub1["Public<br/>10.254.0.0/20<br/>NAT Gateway"]
+            priv1["Private<br/>10.254.16.0/20<br/>API / приложения"]
+            data1["Data<br/>10.254.32.0/20<br/>DB / Redis / MQ / MinIO"]
+            priv1 <--> data1
+        end
+        subgraph az2["AZ-2"]
+            pub2["Public<br/>10.254.48.0/20<br/>NAT Gateway"]
+            priv2["Private<br/>10.254.64.0/20<br/>API / приложения"]
+            data2["Data<br/>10.254.80.0/20<br/>DB / Redis / MQ / MinIO"]
+            priv2 <--> data2
+        end
+        subgraph az3["AZ-3"]
+            pub3["Public<br/>10.254.96.0/20<br/>NAT Gateway"]
+            priv3["Private<br/>10.254.112.0/20<br/>API / приложения"]
+            data3["Data<br/>10.254.128.0/20<br/>DB / Redis / MQ / MinIO"]
+            priv3 <--> data3
+        end
+    end
 
-cloud "Интернет" as internet #E0F2FE
-rectangle "Internet Gateway\nIGW" as igw #DBEAFE
+    igw --> pub1
+    igw --> pub2
+    igw --> pub3
+    priv1 -. "исходящий через NAT" .-> pub1
+    priv2 -. "исходящий через NAT" .-> pub2
+    priv3 -. "исходящий через NAT" .-> pub3
+    data1 -. "исходящий через NAT" .-> pub1
+    data2 -. "исходящий через NAT" .-> pub2
+    data3 -. "исходящий через NAT" .-> pub3
 
-rectangle "VPC 10.254.0.0/16" as vpc #F8FAFC {
-  together {
-    package "AZ-1" as az1 #EFF6FF {
-      rectangle "Public\n10.254.0.0/20\nNAT Gateway" as pub1 #DBEAFE
-      rectangle "Private\n10.254.16.0/20\nAPI / приложения" as priv1 #DCFCE7
-      rectangle "Data\n10.254.32.0/20\nDB / Redis / MQ / MinIO" as data1 #FEF3C7
-      pub1 -[hidden]down- priv1
-      priv1 -[hidden]down- data1
-    }
-
-    package "AZ-2" as az2 #EFF6FF {
-      rectangle "Public\n10.254.48.0/20\nNAT Gateway" as pub2 #DBEAFE
-      rectangle "Private\n10.254.64.0/20\nAPI / приложения" as priv2 #DCFCE7
-      rectangle "Data\n10.254.80.0/20\nDB / Redis / MQ / MinIO" as data2 #FEF3C7
-      pub2 -[hidden]down- priv2
-      priv2 -[hidden]down- data2
-    }
-
-    package "AZ-3" as az3 #EFF6FF {
-      rectangle "Public\n10.254.96.0/20\nNAT Gateway" as pub3 #DBEAFE
-      rectangle "Private\n10.254.112.0/20\nAPI / приложения" as priv3 #DCFCE7
-      rectangle "Data\n10.254.128.0/20\nDB / Redis / MQ / MinIO" as data3 #FEF3C7
-      pub3 -[hidden]down- priv3
-      priv3 -[hidden]down- data3
-    }
-  }
-}
-
-internet --> igw : HTTPS
-igw --> pub1 : public route
-igw --> pub2 : public route
-igw --> pub3 : public route
-
-priv1 <--> data1 : запросы / ответы
-priv2 <--> data2 : запросы / ответы
-priv3 <--> data3 : запросы / ответы
-
-priv1 ..> pub1 : исходящий через NAT
-priv2 ..> pub2 : исходящий через NAT
-priv3 ..> pub3 : исходящий через NAT
-
-data1 ..> pub1 : исходящий через NAT
-data2 ..> pub2 : исходящий через NAT
-data3 ..> pub3 : исходящий через NAT
-
-pub1 ..> igw : NAT egress
-pub2 ..> igw : NAT egress
-pub3 ..> igw : NAT egress
-
-@enduml
+    classDef public fill:#DBEAFE,stroke:#2563EB,color:#111827
+    classDef private fill:#DCFCE7,stroke:#16A34A,color:#111827
+    classDef data fill:#FEF3C7,stroke:#D97706,color:#111827
+    class pub1,pub2,pub3 public
+    class priv1,priv2,priv3 private
+    class data1,data2,data3 data
 ```
 
 ## 4. Балансировщики
