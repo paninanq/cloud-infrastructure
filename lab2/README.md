@@ -28,7 +28,6 @@ helm upgrade --install products-observability-demo \
 | `GET /maintenance-appointments/error` | Возвращает 500, увеличивает счётчики запросов и ошибок, помечает текущий спан как ошибочный. |
 | `GET /maintenance-appointments/delay` | Ждёт 2 секунды внутри дочернего спана `slow-dependency`. |
 | `GET /maintenance-appointments/load` | Параллельно выполняет 25 HTTP-запросов к `GET /autoservices` на этом же сервисе. |
-| `GET /autoservices` | Возвращает фиктивный список автосервисов. |
 | `GET /metrics/` | Отдаёт Prometheus-метрики: запросы, ошибки и гистограмму длительности ответа. Запрос к `/metrics` перенаправляется на этот адрес. |
 
 Каждый прикладной запрос пишет одну JSON-строку в stdout с уровнем, сообщением и `trace_id`. FastAPI автоматически получает серверный спан через OpenTelemetry; ручной дочерний спан показывает искусственную задержку.
