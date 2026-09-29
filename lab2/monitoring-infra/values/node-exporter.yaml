@@ -1,0 +1,12 @@
+# The agent's built-in Kubernetes service discovery scrapes services with these
+# annotations. Keep node_exporter inside the cluster; it has no external port.
+service:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9100"
+
+# Scrape through pod IPs. The cluster CNI reaches every node-exporter pod,
+# unlike the host-network addresses on two cluster nodes.
+hostNetwork: false
+hostRootFsMount:
+  enabled: true

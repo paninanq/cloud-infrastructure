@@ -1,0 +1,6 @@
+apiVersion: v2
+name: products-observability-demo
+description: Учебная заглушка products для лабораторной по мониторингу
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

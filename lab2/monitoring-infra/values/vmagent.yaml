@@ -1,0 +1,25 @@
+# VictoriaMetrics Agent keeps collection inside Kubernetes and sends samples to
+# the standalone VictoriaMetrics instance configured by install.sh.
+mode: deployment
+
+rbac:
+  create: true
+  # Cluster-wide discovery is required for node, pod and service metrics.
+  namespaced: false
+
+# Do not create a Longhorn PVC for the agent. Its remote-write queue is
+# ephemeral; VictoriaMetrics on the observability VM is the durable store.
+persistentVolume:
+  enabled: false
+
+config:
+  global:
+    scrape_interval: 30s
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi

@@ -1,0 +1,71 @@
+controller:
+  type: deployment
+  replicas: 1
+
+rbac:
+  create: true
+
+alloy:
+  configMap:
+    create: true
+    content: |
+      logging {
+        level = "info"
+        format = "logfmt"
+      }
+
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.relabel "products_pods" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          action        = "keep"
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+          regex         = "products(-observability-demo)?"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+          target_label  = "app"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+      }
+
+      loki.source.kubernetes "products" {
+        targets    = discovery.relabel.products_pods.output
+        forward_to = [loki.process.products.receiver]
+      }
+
+      loki.process "products" {
+        stage.json {
+          expressions = {
+            level = "level",
+          }
+        }
+
+        stage.labels {
+          values = {
+            level = "",
+          }
+        }
+
+        forward_to = [loki.write.monitoring.receiver]
+      }
+
+      loki.write "monitoring" {
+        endpoint {
+          url = "http://10.10.4.88:3100/loki/api/v1/push"
+        }
+      }

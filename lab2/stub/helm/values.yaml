@@ -1,0 +1,26 @@
+replicaCount: 1
+
+image:
+  repository: registry.example.invalid/products-observability-demo
+  tag: latest
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+service:
+  port: 8000
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics/"
+
+otel:
+  serviceName: products-observability-demo
+  endpoint: http://10.10.4.88:4318
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

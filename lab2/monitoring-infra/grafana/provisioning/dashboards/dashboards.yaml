@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Pochini monitoring
+    orgId: 1
+    folder: Pochini
+    type: file
+    disableDeletion: true
+    editable: false
+    options:
+      path: /etc/grafana/provisioning/dashboards
