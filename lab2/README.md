@@ -48,7 +48,7 @@ Forwarding from [::1]:8000 -> 8000
 ```
 services:
   victoriametrics:
-    image: ${VICTORIA_METRICS_IMAGE:-victoriametrics/victoria-metrics:latest}
+    image: victoriametrics/victoria-metrics:v1.153.0
     command:
       - -storageDataPath=/storage
       - -retentionPeriod=${VICTORIA_METRICS_RETENTION:-7d}
@@ -60,7 +60,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: ${GRAFANA_IMAGE:-grafana/grafana:latest}
+    image: grafana/grafana:13.1.6
     depends_on:
       victoriametrics:
         condition: service_started
@@ -119,7 +119,7 @@ Alloy находит pod заглушки по метке приложения, 
 ```yaml
 services:
   loki:
-    image: ${LOKI_IMAGE:-grafana/loki:3.7.3}
+    image: grafana/loki:3.7.7
     command:
       - -config.file=/etc/loki/config.yaml
     ports:
@@ -152,7 +152,7 @@ volumes:
 ```yaml
 services:
   jaeger:
-    image: ${JAEGER_IMAGE:-jaegertracing/jaeger:latest}
+    image: jaegertracing/jaeger:2.21.0
     ports:
       - ${VICTORIA_METRICS_BIND_ADDRESS:?Set VICTORIA_METRICS_BIND_ADDRESS}:4318:4318
       - ${GRAFANA_BIND_ADDRESS:?Set GRAFANA_BIND_ADDRESS}:16686:16686
@@ -194,14 +194,14 @@ helm upgrade --install products-observability-demo \
 ```yaml
 services:
   alert-webhook:
-    image: ${ALERT_WEBHOOK_IMAGE:-python:3.13-slim}
+    image: python:3.13.15-slim
     command: [python, -u, /app/alert-webhook.py]
     volumes:
       - ./scripts/alert-webhook.py:/app/alert-webhook.py:ro
     restart: unless-stopped
 
   alertmanager:
-    image: ${ALERTMANAGER_IMAGE:-prom/alertmanager:latest}
+    image: prom/alertmanager:v0.34.1
     depends_on:
       alert-webhook:
         condition: service_started
@@ -215,7 +215,7 @@ services:
     restart: unless-stopped
 
   vmalert:
-    image: ${VMALERT_IMAGE:-victoriametrics/vmalert:latest}
+    image: victoriametrics/vmalert:v1.153.0
     depends_on:
       victoriametrics:
         condition: service_started
