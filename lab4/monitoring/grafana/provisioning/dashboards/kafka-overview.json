@@ -1,0 +1,116 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "title": "Kafka Brokers Online",
+      "type": "stat",
+      "targets": [
+        { "expr": "kafka_brokers", "legendFormat": "Brokers", "refId": "A" }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "title": "Partitions (repair-requests)",
+      "type": "stat",
+      "targets": [
+        { "expr": "kafka_topic_partitions{topic=\"repair-requests\"}", "legendFormat": "Partitions", "refId": "A" }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "title": "Under-Replicated Partitions",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(kafka_topic_partition_under_replicated_partition)", "legendFormat": "Under-Replicated", "refId": "A" }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "title": "Total Consumer Lag",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(kafka_consumergroup_lag{topic=\"repair-requests\"})", "legendFormat": "Total Lag", "refId": "A" }
+      ],
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }
+      }
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "id": 5,
+      "title": "Consumer Lag by Partition",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "kafka_consumergroup_lag{topic=\"repair-requests\"}", "legendFormat": "P{{partition}} ({{consumergroup}})", "refId": "A" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "id": 6,
+      "title": "Topic Current Offset (Log End Offset)",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "kafka_topic_partition_current_offset{topic=\"repair-requests\"}", "legendFormat": "Partition {{partition}} Offset", "refId": "A" }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "id": 7,
+      "title": "Consumer Group Current Offset",
+      "type": "timeseries",
+      "targets": [
+        { "expr": "kafka_consumergroup_current_offset{topic=\"repair-requests\"}", "legendFormat": "{{consumergroup}} P{{partition}}", "refId": "A" }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["kafka"],
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Kafka Cluster & Topic Overview",
+  "uid": "kafka-overview-dashboard",
+  "version": 1
+}
+

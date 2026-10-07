@@ -1,0 +1,152 @@
+services:
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  topic-init:
+    image: apache/kafka:4.3.1
+    container_name: topic-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      TOPIC_NAME: repair-requests
+      PARTITIONS: 3
+      REPLICATION_FACTOR: 1
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      "
+      echo '=== Конфигурирование топика $${TOPIC_NAME} ==='
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic $${TOPIC_NAME} --partitions $${PARTITIONS} --replication-factor $${REPLICATION_FACTOR}
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --alter --topic $${TOPIC_NAME} --partitions $${PARTITIONS} 2>&1 || true
+      echo '=== Конфигурация топика $${TOPIC_NAME} успешно применена ==='
+      "
+
+  producer:
+    build:
+      context: ./producer
+    container_name: requests-producer
+    ports:
+      - "8001:8001"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: repair-requests
+      INSTANCE_NAME: requests-producer-1
+      PORT: 8001
+    depends_on:
+      kafka:
+        condition: service_healthy
+      topic-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  consumer-1:
+    build:
+      context: ./consumer
+    container_name: dispatcher-consumer-1
+    ports:
+      - "8002:8002"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: repair-requests
+      KAFKA_GROUP_ID: dispatcher-group
+      INSTANCE_NAME: dispatcher-1
+      PORT: 8002
+      PROCESSING_DELAY: 0.8
+    depends_on:
+      kafka:
+        condition: service_healthy
+      topic-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  consumer-2:
+    build:
+      context: ./consumer
+    container_name: dispatcher-consumer-2
+    ports:
+      - "8003:8003"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: repair-requests
+      KAFKA_GROUP_ID: dispatcher-group
+      INSTANCE_NAME: dispatcher-2
+      PORT: 8003
+      PROCESSING_DELAY: 0.8
+    depends_on:
+      kafka:
+        condition: service_healthy
+      topic-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pochini-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.10.0
+    container_name: kafka-exporter
+    ports:
+      - "9308:9308"
+    command: ["--kafka.server=kafka:9092"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - kafka-exporter
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.2.3
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+
